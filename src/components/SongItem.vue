@@ -73,7 +73,7 @@ const styleBySize = computed(() => {
   // Index (opt) | Image | Title/Info | Time | Actions
   let cols = ''
   if (hasIndex) cols += '3rem '
-  
+
   if (props.size === 'mini') {
     cols += '3.5rem 1fr auto auto'
     return {
@@ -132,11 +132,9 @@ function handleSingerDetail(singerMid) {
 </script>
 
 <template>
-  <div 
-    :class="cn('song-item h-16 px-2 rounded-md hover:bg-white/10 cursor-pointer transition-colors group', styleBySize.wrapper, props.class)" 
-    :style="{ gridTemplateColumns: styleBySize.gridTemplateColumns }"
-    @click="handleClick"
-  >
+  <div
+    :class="cn('song-item h-16 px-2 rounded-md hover:bg-white/10 cursor-pointer transition-colors group relative', styleBySize.wrapper, props.class)"
+    :style="{ gridTemplateColumns: styleBySize.gridTemplateColumns }" @click="handleClick">
     <!-- Index -->
     <div v-if="props.index !== -1" class="text-center text-gray-500 font-medium">
       {{ props.index }}
@@ -145,33 +143,35 @@ function handleSingerDetail(singerMid) {
     <div class="relative">
       <img :src="cover" :class="styleBySize.img">
       <div v-if="isPlaying" class="absolute inset-0 bg-black/40 flex items-center justify-center rounded">
-         <div class="i-svg-spinners:bars-scale w-4 h-4 text-[#1db954]" />
+        <div class="i-svg-spinners:bars-scale w-4 h-4 text-[#1db954]" />
       </div>
     </div>
-    
+
     <div class="flex flex-col overflow-hidden justify-center h-full min-w-0">
       <div :class="styleBySize.title" v-html="title" />
       <div class="flex items-center gap-2 mt-0.5">
         <span v-if="pages" class="bg-[#282828] text-[10px] px-1 rounded text-gray-300">合集</span>
-        <span 
-          :class="styleBySize.author" 
-          class="hover:text-white hover:underline"
-          @click.stop="handleSingerDetail(mid)"
-        >
+        <span :class="styleBySize.author" class="hover:text-white hover:underline"
+          @click.stop="handleSingerDetail(mid)">
           {{ author }}
         </span>
       </div>
     </div>
+    <div>
+      <!-- Time -->
+      <div
+        class="text-sm text-gray-500 tabular-nums text-right block group-hover:hidden transition-opacity duration-200">
+        {{ (duration || 0) }}
+      </div>
 
-    <!-- Time -->
-    <div class="text-sm text-gray-500 tabular-nums text-right">
-      {{ (duration || 0) }}
-    </div>
-
-    <!-- 操作 -->
-    <div class="flex items-center justify-end gap-3 text-lg text-gray-400 pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-      <div v-if="star" class="i-mingcute:heart-line hover:text-white" title="收藏" @click.stop="PLstore.startAddSong(props.song)" />
-      <div v-if="del" class="i-mingcute:delete-2-line hover:text-red-500" title="删除" @click.stop="emit('delete-song', props.song)" />
+      <!-- 操作 -->
+      <div
+        class="items-center justify-end gap-3 text-lg text-gray-400 pr-2 h-full px-3 hidden group-hover:flex transition-opacity duration-200">
+        <div v-if="star" class="i-mingcute:heart-line hover:text-white" title="收藏"
+          @click.stop="PLstore.startAddSong(props.song)" />
+        <div v-if="del" class="i-mingcute:delete-2-line hover:text-red-500" title="删除"
+          @click.stop="emit('delete-song', props.song)" />
+      </div>
     </div>
   </div>
 </template>

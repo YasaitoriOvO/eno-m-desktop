@@ -520,7 +520,8 @@ function stopBulkDownload() {
     </div>
     <div class="w-full h-full flex flex-col relative ease-in-out" :class="isScrolled ? 'pt-[72px]' : 'pt-[320px]'">
       <!-- 歌曲列表标题 -->
-      <div class="px-8 py-3 text-body-small text-gray-500 border-b border-[#ffffff1a] z-10 sticky top-0 bg-[#121212]">
+      <div
+        class="pl-12 pr-6 py-3 text-body-small text-gray-500 border-b border-[#ffffff1a] z-10 sticky top-0 bg-[#121212]">
         <div class="grid grid-cols-[3rem_3.5rem_1fr_4rem_3rem] gap-4">
           <div class="text-center">#</div>
           <div />
