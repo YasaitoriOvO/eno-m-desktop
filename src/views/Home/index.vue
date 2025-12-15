@@ -3,11 +3,13 @@ import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { usePlaylistStore } from '../../playlist/store'
 import { useBlblStore } from '../../blbl/store'
 import SingerItem from '~/components/SingerItem.vue'
+import ScrollButton from './scroll-button.vue'
 import { useRouter } from 'vue-router'
 
 const store = useBlblStore()
 const PLstore = usePlaylistStore()
 const router = useRouter()
+const singerScrollRef = ref(null)
 
 // 当前时间（用于计算问候语），每分钟更新一次以保持问候语准确
 const now = ref(Date.now())
@@ -35,6 +37,13 @@ const greeting = computed(() => {
 function goToRank() {
   router.push('/rank')
 }
+
+function handleScroll(offset) {
+  if (singerScrollRef.value) {
+    singerScrollRef.value.scrollBy({ left: offset, behavior: 'smooth' })
+  }
+}
+
 </script>
 
 <template>
@@ -86,17 +95,19 @@ function goToRank() {
         <h3 class="text-2xl font-bold text-white">
           关注的歌手
         </h3>
-        <span
-          class="text-xs font-bold text-gray-400 hover:text-white cursor-pointer uppercase tracking-wider transition-colors"
-          @click="$router.push('/singerList')">
-          Show all →
-        </span>
+        <div class="flex items-center gap-4">
+          <ScrollButton :step="300" :handle-scroll="handleScroll" />
+          <span
+            class="text-xs font-bold text-gray-400 hover:text-white cursor-pointer uppercase tracking-wider transition-colors"
+            @click="$router.push('/singerList')">
+            Show all →
+          </span>
+        </div>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 auto-rows-max">
-        <!-- 显示前6个 -->
-        <SingerItem v-for="serid in PLstore.singers.slice(0, 6)" :key="serid" :singer-mid="serid" type="card-modern"
-          class="h-56" />
+      <div ref="singerScrollRef" class="flex overflow-x-auto gap-4 pb-4 scrollbar-hide">
+        <SingerItem v-for="serid in PLstore.singers" :key="serid" :singer-mid="serid" type="card-modern"
+          class="h-56 w-40 flex-shrink-0 max-w-40" />
       </div>
     </div>
 

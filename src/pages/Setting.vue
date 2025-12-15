@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useDownloadStore } from '~/store/downloadStore'
 import Message from '~/components/message'
 import BiliLoginCard from './components/BiliLoginCard.vue'
@@ -255,9 +255,6 @@ function handleBiliLogout() {
 
 <template>
   <div class="page-inner relative">
-    <!-- 顶部架构效果 -->
-    <div class="fixed top-0 left-[280px] right-0 h-40 bg-gradient-to-b from-[#1db954]/5 via-[#121212]/20 to-[#121212] pointer-events-none -z-10" />
-    
     <!-- 内容区域 -->
     <div class="relative z-10 max-w-4xl">
       <!-- 页面标题 -->
@@ -267,48 +264,24 @@ function handleBiliLogout() {
       </div>
 
       <!-- B站扫码登录卡片 - 优先显示 -->
-      <BiliLoginCard 
-        :user="user"
-        @login="handleBiliLogin"
-        @logout="handleBiliLogout"
-      />
+      <BiliLoginCard :user="user" @login="handleBiliLogin" @logout="handleBiliLogout" />
 
       <!-- 关于应用卡片 -->
-      <AppInfoCard
-        :current-version="currentVersion"
-        :latest-version="latestVersion"
-        :release-notes="releaseNotes"
-        :update-available="updateAvailable"
-        :update-checked="updateChecked"
-        :checking-update="checkingUpdate"
-        :downloading-update="downloadingUpdate"
-        :download-progress="downloadProgress"
-        :update-error="updateError"
-        @checkUpdates="checkForUpdates"
-        @downloadUpdate="downloadAndInstallUpdate"
-      />
+      <AppInfoCard :current-version="currentVersion" :latest-version="latestVersion" :release-notes="releaseNotes"
+        :update-available="updateAvailable" :update-checked="updateChecked" :checking-update="checkingUpdate"
+        :downloading-update="downloadingUpdate" :download-progress="downloadProgress" :update-error="updateError"
+        @checkUpdates="checkForUpdates" @downloadUpdate="downloadAndInstallUpdate" />
 
       <!-- FFmpeg 工具卡片 -->
-      <FFmpegCard
-        :ffmpeg-info="ffmpegInfo"
-        :ffmpeg-loading="ffmpegChecking"
-        :ffmpeg-error="ffmpegError"
-        :downloading-ffmpeg="downloadingFFmpeg"
-        :download-progress="ffmpegDownloadProgress"
-        @checkFFmpeg="checkFFmpeg"
-        @downloadFFmpeg="downloadFFmpeg"
-      />
+      <FFmpegCard :ffmpeg-info="ffmpegInfo" :ffmpeg-loading="ffmpegChecking" :ffmpeg-error="ffmpegError"
+        :downloading-ffmpeg="downloadingFFmpeg" :download-progress="ffmpegDownloadProgress" @checkFFmpeg="checkFFmpeg"
+        @downloadFFmpeg="downloadFFmpeg" />
 
       <!-- 下载设置卡片 -->
-      <DownloadSettingsCard
-        :download-path="downloadStore.config.downloadPath || '未设置（使用默认目录）'"
-        :download-name-format="'{singer} - {song}'"
-        :download-image-format="'cover.jpg'"
-        :download-sub-format="'{index}. {singer} - {song}.lrc'"
-        @selectFolder="selectDownloadPath"
-        @openDownloadFolder="openDownloadFolder"
-      />
+      <DownloadSettingsCard :download-path="downloadStore.config.downloadPath || '未设置（使用默认目录）'"
+        :download-name-format="'{singer} - {song}'" :download-image-format="'cover.jpg'"
+        :download-sub-format="'{index}. {singer} - {song}.lrc'" @selectFolder="selectDownloadPath"
+        @openDownloadFolder="openDownloadFolder" />
     </div>
   </div>
 </template>
-

@@ -17,16 +17,14 @@ function goForward() {
 <template>
   <div class="flex items-center gap-4 h-16 px-6 sticky top-0 z-10 bg-transparent">
     <div class="flex gap-2">
-      <button 
+      <button
         class="w-8 h-8 rounded-full bg-black/50 flex items-center justify-center cursor-pointer hover:bg-black/70 text-white transition-colors"
-        @click="goBack"
-      >
+        @click="goBack">
         <div class="i-mingcute:left-line text-xl" />
       </button>
-      <button 
+      <button
         class="w-8 h-8 rounded-full bg-black/50 flex items-center justify-center cursor-pointer hover:bg-black/70 text-white transition-colors"
-        @click="goForward"
-      >
+        @click="goForward">
         <div class="i-mingcute:right-line text-xl" />
       </button>
     </div>
@@ -38,4 +36,3 @@ function goForward() {
     </div>
   </div>
 </template>
-

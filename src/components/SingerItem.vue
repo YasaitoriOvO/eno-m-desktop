@@ -41,23 +41,20 @@ function handleSingerDetail(singerMid) {
 
 <template>
   <!-- Card Style (Spotify 风格卡片) -->
-  <div
-    v-if="type === 'card'"
-    :class="cn(
-      'flex flex-col items-center p-4 rounded-md bg-[#181818] hover:bg-[#282828] transition-all duration-300 cursor-pointer group w-40 flex-shrink-0',
-      props.class
-    )"
-    @click.stop="handleSingerDetail(singerMid)"
-  >
+  <div v-if="type === 'card'" :class="cn(
+    'flex flex-col items-center p-4 rounded-md bg-[#181818] hover:bg-[#282828] transition-colors duration-300 cursor-pointer group w-40 flex-shrink-0',
+    props.class
+  )" v-motion :initial="{ opacity: 0, y: 20 }"
+    :enter="{ opacity: 1, y: 0, transition: { type: 'spring', stiffness: 250, damping: 25 } }"
+    :hover="{ scale: 1.05, transition: { type: 'spring', stiffness: 300, damping: 20 } }"
+    @click.stop="handleSingerDetail(singerMid)">
     <div class="relative w-full aspect-square mb-4 shadow-lg rounded-md overflow-hidden">
-      <img
-        :src="avatar"
-        alt="singerAvatar"
-        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-      >
+      <img :src="avatar" alt="singerAvatar"
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out">
       <!-- 播放按钮悬浮 (可选，如果你想直接播放歌手热门歌曲) -->
-      <div class="absolute bottom-2 right-2 w-12 h-12 bg-[#1db954] rounded-full flex items-center justify-center shadow-lg opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:scale-105 hover:bg-[#1ed760] z-10">
-         <div class="i-mingcute:play-fill text-black text-2xl pl-1" />
+      <div
+        class="absolute bottom-2 right-2 w-12 h-12 bg-[#1db954] rounded-full flex items-center justify-center shadow-lg opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:scale-105 hover:bg-[#1ed760] z-10">
+        <div class="i-mingcute:play-fill text-black text-2xl pl-1" />
       </div>
     </div>
 
@@ -72,18 +69,14 @@ function handleSingerDetail(singerMid) {
   </div>
 
   <!-- Simple List Style (侧边栏简单列表) -->
-  <div 
-    v-else-if="type === 'simple'"
-    :class="cn(
-      'flex items-center gap-3 p-2 rounded hover:bg-[#1a1a1a] cursor-pointer transition-colors group',
-      props.class
-    )"
-    @click.stop="handleSingerDetail(singerMid)"
-  >
-    <img 
-      :src="avatar" 
-      class="w-12 h-12 rounded-md object-cover"
-    >
+  <div v-else-if="type === 'simple'" :class="cn(
+    'flex items-center gap-3 p-2 rounded hover:bg-[#1a1a1a] cursor-pointer transition-colors group',
+    props.class
+  )" v-motion :initial="{ opacity: 0, x: -10 }"
+    :enter="{ opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 25 } }"
+    :hover="{ scale: 1.02, transition: { type: 'spring', stiffness: 400, damping: 15 } }"
+    @click.stop="handleSingerDetail(singerMid)">
+    <img :src="avatar" class="w-12 h-12 rounded-md object-cover">
     <div class="flex flex-col overflow-hidden">
       <span class="text-white font-medium truncate text-sm">{{ name }}</span>
       <span class="text-xs text-[#a7a7a7] truncate">{{ desc }}</span>
@@ -91,40 +84,38 @@ function handleSingerDetail(singerMid) {
   </div>
 
   <!-- Modern Card Style (现代高级卡片，匹配媒体库) -->
-  <div
-    v-else-if="type === 'card-modern'"
-    :class="cn(
-      'relative h-56 w-full flex flex-col items-center justify-between p-5 rounded-xl bg-gradient-to-b from-[#282828] to-[#1a1a1a] hover:bg-gradient-to-b hover:from-[#333333] hover:to-[#1f1f1f] transition-all duration-300 cursor-pointer group shadow-lg hover:shadow-2xl overflow-hidden',
-      props.class
-    )"
-    @click.stop="handleSingerDetail(singerMid)"
-  >
+  <div v-else-if="type === 'card-modern'" :class="cn(
+    'relative h-56 w-full flex flex-col items-center justify-between p-5 rounded-xl bg-gradient-to-b from-[#282828] to-[#1a1a1a] hover:bg-gradient-to-b hover:from-[#333333] hover:to-[#1f1f1f] transition-colors duration-300 cursor-pointer group shadow-lg hover:shadow-2xl overflow-hidden',
+    props.class
+  )" v-motion :initial="{ opacity: 0, scale: 0.95 }"
+    :enter="{ opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 250, damping: 25 } }"
+    :hover="{ scale: 1.03, transition: { type: 'spring', stiffness: 300, damping: 20 } }"
+    @click.stop="handleSingerDetail(singerMid)">
     <!-- 背景光晕效果 -->
-    <div 
-      class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40 z-10 group-hover:to-black/20 transition-all duration-300 rounded-xl pointer-events-none"
-    />
-    
+    <div
+      class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40 z-10 group-hover:to-black/20 transition-all duration-300 rounded-xl pointer-events-none" />
+
     <!-- 装饰背景 -->
-    <div class="absolute -top-1/4 -right-1/4 w-32 h-32 bg-[#1db954] rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 z-0" />
+    <div
+      class="absolute -top-1/4 -right-1/4 w-32 h-32 bg-[#1db954] rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 z-0" />
 
     <!-- 卡片内容 -->
     <div class="relative flex flex-col items-center justify-between w-full h-full z-20">
       <!-- 头像 -->
       <div class="relative w-24 h-24 shadow-lg rounded-full overflow-hidden flex-shrink-0 flex-grow-0">
-        <img
-          :src="avatar"
-          alt="singerAvatar"
-          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-        >
+        <img :src="avatar" alt="singerAvatar"
+          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out">
         <!-- 播放按钮 -->
-        <div class="absolute inset-0 w-full h-full flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 transition-opacity duration-300 rounded-full">
+        <div
+          class="absolute inset-0 w-full h-full flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 transition-opacity duration-300 rounded-full">
           <div class="i-mingcute:play-fill text-white text-2xl pl-1" />
         </div>
       </div>
 
       <!-- 信息 -->
       <div class="flex flex-col items-center w-full flex-1 justify-center">
-        <h4 class="text-white font-bold text-sm line-clamp-1 group-hover:text-[#1db954] transition-colors duration-300 mt-2">
+        <h4
+          class="text-white font-bold text-sm line-clamp-1 group-hover:text-[#1db954] transition-colors duration-300 mt-2">
           {{ name }}
         </h4>
         <p class="text-gray-400 text-xs mt-1 line-clamp-1">
@@ -134,24 +125,20 @@ function handleSingerDetail(singerMid) {
     </div>
 
     <!-- 边框光晕效果 -->
-    <div class="absolute inset-0 rounded-xl border border-[#1db954] opacity-0 group-hover:opacity-20 transition-opacity duration-300 z-30 pointer-events-none" />
+    <div
+      class="absolute inset-0 rounded-xl border border-[#1db954] opacity-0 group-hover:opacity-20 transition-opacity duration-300 z-30 pointer-events-none" />
   </div>
 
   <!-- Old List Style (兼容旧的列表样式，如果需要) -->
-  <div
-    v-else
-    :class="cn(
-      'flex flex-shrink-0 items-center justify-between w-80 h-20 rounded-lg px-4 bg-[#181818] hover:bg-[#282828] transition-all duration-300 cursor-pointer group',
-      props.class
-    )"
-    @click.stop="handleSingerDetail(singerMid)"
-  >
+  <div v-else :class="cn(
+    'flex flex-shrink-0 items-center justify-between w-80 h-20 rounded-lg px-4 bg-[#181818] hover:bg-[#282828] transition-colors duration-300 cursor-pointer group',
+    props.class
+  )" v-motion :initial="{ opacity: 0, x: -20 }"
+    :enter="{ opacity: 1, x: 0, transition: { type: 'spring', stiffness: 250, damping: 25 } }"
+    :hover="{ scale: 1.02, transition: { type: 'spring', stiffness: 400, damping: 25 } }"
+    @click.stop="handleSingerDetail(singerMid)">
     <div class="flex items-center space-x-4">
-      <img
-        :src="avatar"
-        alt="singerAvatar"
-        class="w-13 h-13 rounded-full object-cover shadow-sm"
-      >
+      <img :src="avatar" alt="singerAvatar" class="w-13 h-13 rounded-full object-cover shadow-sm">
       <div class="flex flex-col">
         <div class="text-[16px] font-medium tracking-wide text-white">
           {{ name }}
@@ -163,11 +150,9 @@ function handleSingerDetail(singerMid) {
     </div>
 
     <div class="flex items-center gap-3 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
-      <div
-        v-if="canDel"
+      <div v-if="canDel"
         class="i-mingcute:delete-line w-[18px] h-[18px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-        @click.stop="PLstore.removeSinger(singerMid)"
-      />
+        @click.stop="PLstore.removeSinger(singerMid)" />
     </div>
   </div>
 </template>

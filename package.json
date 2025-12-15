@@ -25,6 +25,9 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@iconify-json/material-symbols": "^1.2.50",
+    "@iconify-json/mingcute": "^1.2.6",
+    "@iconify-json/svg-spinners": "^1.2.4",
     "@types/lodash": "^4.17.21",
     "@types/md5": "^2.3.6",
     "@unocss/preset-attributify": "^66.5.10",
@@ -45,12 +48,12 @@
     "vue-tsc": "^2.2.12"
   },
   "dependencies": {
-    "@iconify/json": "^2.2.415",
     "@meanc/webext-fetch": "^0.0.3",
     "@types/howler": "^2.2.12",
     "@types/webextension-polyfill": "^0.10.7",
     "@vueuse/core": "^13.9.0",
     "@vueuse/math": "^13.9.0",
+    "@vueuse/motion": "^3.0.3",
     "classnames": "^2.5.1",
     "color.js": "^1.2.0",
     "howler": "^2.2.4",

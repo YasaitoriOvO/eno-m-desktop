@@ -9,6 +9,7 @@ import SongItem from './components/SongItem.vue'
 import WallpaperGen from './components/wallpaper-gen/index.vue'
 import AddSong from './playlist/AddSong.vue'
 import UpdateCheck from './components/UpdateCheck.vue'
+import GlobalGlow from './components/GlobalGlow.vue'
 import { useBlblStore } from './blbl/store'
 import { invokeBiliApi, BLBL } from './api/bili'
 
@@ -37,14 +38,14 @@ onMounted(() => {
       userInfo.value = {}
     }
   }
-  
+
   fetchUserInfo()
 
-  // 监听用户信息更新事件（扫码登陆或退出登陆时触发）
-  ;(window as any).ipcRenderer?.on('bili-user-updated', () => {
-    console.log('bili-user-updated event received, refreshing user info...')
-    fetchUserInfo()
-  })
+    // 监听用户信息更新事件（扫码登陆或退出登陆时触发）
+    ; (window as any).ipcRenderer?.on('bili-user-updated', () => {
+      console.log('bili-user-updated event received, refreshing user info...')
+      fetchUserInfo()
+    })
 })
 provide('userInfo', userInfo)
 
@@ -54,8 +55,8 @@ function deleteSong(index: number) {
 </script>
 
 <template>
-  <main class="h-screen w-screen overflow-hidden bg-black text-[#b3b3b3] font-sans grid-layout p-2 gap-2">
-    
+  <main class="h-screen w-screen overflow-hidden text-[#b3b3b3] font-sans grid-layout p-2 gap-2">
+    <GlobalGlow />
     <!-- 左侧侧边栏 -->
     <div class="grid-sider">
       <Sider />
@@ -67,7 +68,7 @@ function deleteSong(index: number) {
       <div class="flex-1 overflow-y-auto scrollbar-styled relative">
         <div class="fadeInWrapper min-h-full">
           <router-view v-slot="{ Component }">
-            <keep-alive include="search">
+            <keep-alive include="search, playlist">
               <component :is="Component" />
             </keep-alive>
           </router-view>
@@ -79,19 +80,12 @@ function deleteSong(index: number) {
     <div v-if="showPlaylist" class="grid-right-panel bg-[#121212] rounded-lg overflow-hidden flex flex-col w-[320px]">
       <div class="p-4 font-bold text-lg text-white border-b border-[#282828] flex justify-between items-center">
         播放列表
-        <div class="i-mingcute:close-line cursor-pointer hover:text-white text-gray-400" @click="showPlaylist = false" />
+        <div class="i-mingcute:close-line cursor-pointer hover:text-white text-gray-400"
+          @click="showPlaylist = false" />
       </div>
       <div class="flex-1 overflow-y-auto scrollbar-styled p-2">
-         <SongItem 
-          v-for="(song, index) in (store.playList as any[])" 
-          :key="(song as any).id"
-          show-active 
-          del 
-          :song="song" 
-          size="mini" 
-          @delete-song="deleteSong(index)" 
-          class="hover:bg-[#282828] rounded"
-        />
+        <SongItem v-for="(song, index) in (store.playList as any[])" :key="(song as any).id" show-active del
+          :song="song" size="mini" @delete-song="deleteSong(index)" class="hover:bg-[#282828] rounded" />
       </div>
     </div>
 
@@ -103,7 +97,6 @@ function deleteSong(index: number) {
     <WallpaperGen />
     <AddSong />
     <UpdateCheck />
-
   </main>
 </template>
 
@@ -111,8 +104,10 @@ function deleteSong(index: number) {
 .grid-layout {
   display: grid;
   grid-template-areas:
-    "sider main right player" /* 默认状态，right 和 player 在这里有些逻辑冲突，下面会用 JS 动态控制或 CSS 调整 */
-    "sider main right player"; /* 占位 */
+    "sider main right player"
+    /* 默认状态，right 和 player 在这里有些逻辑冲突，下面会用 JS 动态控制或 CSS 调整 */
+    "sider main right player";
+  /* 占位 */
 }
 
 /* 动态 Grid 布局 */
@@ -121,8 +116,10 @@ function deleteSong(index: number) {
   grid-template-areas:
     "sider main right"
     "player player player";
-  grid-template-columns: auto 1fr auto; /* 侧边栏 | 主内容 | 右侧栏(自动宽度) */
-  grid-template-rows: 1fr auto; /* 主体 | 播放栏 */
+  grid-template-columns: auto 1fr auto;
+  /* 侧边栏 | 主内容 | 右侧栏(自动宽度) */
+  grid-template-rows: 1fr auto;
+  /* 主体 | 播放栏 */
 }
 
 .grid-sider {
@@ -188,6 +185,7 @@ img::before {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }

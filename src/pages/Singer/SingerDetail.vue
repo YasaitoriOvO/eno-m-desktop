@@ -13,10 +13,12 @@ import Message from '~/components/message'
 import { useDownloadStore } from '~/store/downloadStore'
 import { average } from 'color.js'
 import BulkDownloadDialog from '~/components/BulkDownloadDialog.vue'
+import { useUIStore } from '@/store/uiStore'
 
 const route = useRoute()
 const PLstore = usePlaylistStore()
 const store = useBlblStore()
+const uiStore = useUIStore()
 
 const currentMid = computed(() => route.params.mid || '')
 
@@ -25,6 +27,9 @@ const info = computed(() => {
 })
 
 const headerColor = ref('#535353') // 默认颜色
+watch(() => headerColor.value, (newColor) => {
+  uiStore.setGlowColor(newColor)
+})
 
 // 提取主题色
 watch(info, async (newInfo) => {
@@ -432,18 +437,19 @@ function stopBulkDownload() {
 
 <template>
   <!-- 页面主容器 -->
-  <div class="w-full h-full flex flex-col bg-[#121212] relative overflow-hidden">
-
-    <!-- 顶部背景 -->
-    <div class="absolute top-0 left-0 w-full h-80 z-0 pointer-events-none transition-colors duration-500 ease-in-out"
-      :style="{ background: `linear-gradient(to bottom, ${headerColor}40, #121212)` }" />
+  <div class="w-full h-full flex flex-col relative overflow-hidden">
 
     <!-- 固定头部区域 -->
     <div class="shrink-0 relative z-10 px-8 pt-6 pb-8">
       <!-- 歌手信息 -->
       <div class="flex items-end gap-8 mb-8">
         <!-- 头像 -->
-        <img :src="info?.face" class="h-40 w-40 object-cover rounded-2xl shadow-2xl border-2 border-[#1db954]/30">
+        <div class="relative h-40 w-40 flex-shrink-0">
+          <!-- 底部模糊层 -->
+          <img :src="info?.face" class="absolute inset-0 h-full w-full object-cover rounded-2xl blur-md opacity-50 ">
+          <!-- 顶部清晰层 -->
+          <img :src="info?.face" class="relative h-full w-full object-cover rounded-2xl shadow-2xl z-10">
+        </div>
 
         <!-- 信息 -->
         <div class="flex flex-col gap-3 flex-1">
@@ -482,7 +488,8 @@ function stopBulkDownload() {
 
         <!-- 操作按钮 -->
         <div class="flex items-center gap-3 flex-shrink-0">
-          <button class="btn-primary h-14 w-14 px-5 flex-center flex-shrink-0" @click="handlePlayUser" title="播放全部">
+          <button class="h-14 w-14 px-5 flex-center flex-shrink-0 rounded-full"
+            :style="{ backgroundColor: headerColor }" @click="handlePlayUser" title="播放全部">
             <div class="i-mingcute:play-fill text-4xl" />
           </button>
         </div>
