@@ -1,6 +1,6 @@
 <script setup>
-import { useInfiniteScroll } from '@vueuse/core'
-import { computed, ref, watch, onMounted } from 'vue'
+import { useInfiniteScroll, useScroll } from '@vueuse/core'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import SongItem from '~/components/SongItem.vue'
@@ -65,7 +65,9 @@ const page = ref({
   ps: 25,
   count: 0,
 })
-const listRef = ref(null)
+const contentRef = ref(null)
+const { y: scrollY } = useScroll(contentRef)
+const isScrolled = computed(() => scrollY.value > 100)
 
 // bulk download state
 const downloadStore = useDownloadStore()
@@ -80,7 +82,7 @@ const bulkConcurrency = ref(3)  // ✅ 并发下载数：3 个
 
 // 滚动加载 - 绑定到具体的列表容器
 useInfiniteScroll(
-  listRef,
+  contentRef,
   async () => {
     // 如果正在加载中，或者已经没有更多数据
     if (loading.value || (page.value.count > 0 && page.value.pn * page.value.ps >= page.value.count))
@@ -160,10 +162,6 @@ async function handleFollow() {
     console.error(e)
     Message.show({ type: 'error', message: '操作失败' })
   }
-}
-function startExportPoster() {
-  PLstore.isShowPoster = true
-  PLstore.posters = renderList.value.map(item => item.cover)
 }
 
 // 通过主进程打开新窗口查看歌手主页（优先使用 Electron 窗口，失败回退到浏览器）
@@ -437,116 +435,115 @@ function stopBulkDownload() {
 
 <template>
   <!-- 页面主容器 -->
-  <div class="w-full h-full flex flex-col relative overflow-hidden">
+  <section ref="contentRef" class="h-[calc(100vh-170px)] overflow-auto bg-[#121212]">
+    <!-- 动态头部区域 -->
+    <div class="shrink-0 top-0 absolute z-20 w-full need-ease overflow-hidden" :class="isScrolled
+      ? 'h-[72px] bg-[#121212]/95 backdrop-blur-xl'
+      : 'h-[320px] bg-transparent'">
 
-    <!-- 固定头部区域 -->
-    <div class="shrink-0 relative z-10 px-8 pt-6 pb-8">
-      <!-- 歌手信息 -->
-      <div class="flex items-end gap-8 mb-8">
-        <!-- 头像 -->
-        <div class="relative h-40 w-40 flex-shrink-0">
-          <!-- 底部模糊层 -->
-          <img :src="info?.face" class="absolute inset-0 h-full w-full object-cover rounded-2xl blur-md opacity-50 ">
-          <!-- 顶部清晰层 -->
-          <img :src="info?.face" class="relative h-full w-full object-cover rounded-2xl shadow-2xl z-10">
-        </div>
+      <!-- 头像 -->
+      <div class="absolute z-20 overflow-hidden need-ease" :class="isScrolled
+        ? 'left-4 top-3 w-12 h-12 rounded-md'
+        : 'left-8 top-10 w-44 h-44 rounded-2xl'">
+        <!-- 顶部清晰层 -->
+        <img :src="info?.face" class="relative w-full h-full object-cover shadow-2xl z-10 need-ease">
+      </div>
 
-        <!-- 信息 -->
-        <div class="flex flex-col gap-3 flex-1">
-          <div v-if="info?.official?.role"
-            class="flex items-center gap-2 text-sm font-bold text-[#1db954] uppercase tracking-widest">
-            <div class="i-mingcute:certificate-fill text-lg" />
-            <span>{{ info?.official?.title || 'Verified Artist' }}</span>
-          </div>
-
-          <h1 class="text-display flex items-center gap-3 cursor-pointer">
-            {{ info?.name }}
-            <button @click="openSingerPage" title="在新窗口打开歌手主页" class="text-gray-400 hover:text-white transition-colors">
-              <div class="i-mingcute:external-link-line text-lg" />
-            </button>
-          </h1>
-
-          <div class="flex items-center gap-6 text-body-small">
-            <div class="flex items-center gap-2 cursor-pointer" @click="prepareBulkDownload">
-              <span class="font-semibold text-white">{{ page.count }}</span>
-              <span>首音乐作品</span>
-              <div class="i-mingcute:download-2-fill text-md text-white" />
-            </div>
-            <button :class="[
-              'transition-all duration-300 tracking-widest',
-              isFollowed
-                ? 'border-[#1db954] text-[#1db954]/70 hover:text-[#1db954]'
-                : 'border-gray-500 text-white/70 hover:border-white hover:text-[#ffffff]'
-            ]" @click="handleFollow">
-              <div class="flex items-center gap-2">
-                <div :class="isFollowed ? 'i-mingcute:check-line' : 'i-mingcute:add-line'" />
-                <span>{{ isFollowed ? '已关注' : '关注' }}</span>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <!-- 操作按钮 -->
-        <div class="flex items-center gap-3 flex-shrink-0">
-          <button class="h-14 w-14 px-5 flex-center flex-shrink-0 rounded-full"
-            :style="{ backgroundColor: headerColor }" @click="handlePlayUser" title="播放全部">
-            <div class="i-mingcute:play-fill text-4xl" />
+      <!-- 展开状态的信息 (名字,) -->
+      <div class="absolute right-8 flex flex-col gap-4   origin-left need-ease"
+        :class="isScrolled ? ' pointer-events-none scale-40 top-3 left-20' : 'text-lg top-32 left-55'">
+        <!-- 名字 -->
+        <h1 class="text-5xl font-black text-white tracking-tight flex items-center gap-4 group cursor-pointer">
+          {{ info?.name }}
+          <button @click="openSingerPage" title="在新窗口打开歌手主页"
+            class="text-gray-400 hover:text-white transition-colors opacity-0 group-hover:opacity-100">
+            <div class="i-mingcute:external-link-line text-2xl" />
           </button>
+        </h1>
+      </div>
+      <!-- 统计 & 关注按钮 -->
+      <div class="flex items-center gap-6 text-sm text-gray-300 font-medium mt-2 absolute left-57 bottom-25 need-ease"
+        :class="isScrolled ? 'translate-y-100 pointer-events-none scale-95' : 'translate-y-0 scale-100'">
+        <!-- 歌曲数量 -->
+        <div class="flex items-center gap-2 cursor-pointer hover:text-white transition-colors"
+          @click="prepareBulkDownload">
+          <span class="text-white font-bold text-md">{{ page.count }}</span>
+          <span>首音乐作品</span>
+          <div class="i-mingcute:download-2-fill text-md" />
         </div>
+        <!-- 关注按钮 -->
+        <button
+          class="p-1 rounded-full border duration-300 flex items-center gap-2 uppercase text-xs font-bold tracking-wider hover:scale-105 active:scale-95 border-none"
+          :class="isFollowed ? ' text-[#1db954]' : 'text-white'" @click="handleFollow">
+          <div :class="isFollowed ? 'i-mingcute:check-line' : 'i-mingcute:add-line'" />
+          <span>{{ isFollowed ? '已关注' : '关注' }}</span>
+        </button>
+      </div>
+
+      <!-- 播放按钮 绝对定位过去的-->
+      <div class="absolute   need-ease z-1" :class="isScrolled
+        ? 'right-4 top-1/2 -translate-y-1/2 scale-75'
+        : 'right-8 top-24 scale-100'">
+        <button
+          class="w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform"
+          :style="{ backgroundColor: headerColor }" @click="handlePlayUser" title="播放全部">
+          <div class="i-mingcute:play-fill text-3xl text-black ml-1" />
+        </button>
       </div>
 
       <!-- 搜索栏 -->
-      <div class="flex items-center gap-4">
-        <div class="relative flex-1 max-w-md group">
+      <div class="absolute bottom-6 left-8 right-8 max-w-md need-ease"
+        :class="isScrolled ? 'opacity-0 translate-y-10 pointer-events-none' : 'opacity-100 translate-y-0'">
+        <div class="relative group">
           <div
-            class="i-mingcute:search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-white z-10" />
-          <input v-model="keyword" placeholder="搜索歌曲..." type="text"
-            class="w-full h-10 pl-9 pr-4 rounded-lg bg-[#282828] hover:bg-[#333333] focus:bg-[#333333] focus:border-[#1db954] border border-transparent text-white outline-none transition-all placeholder:text-gray-500"
+            class="i-mingcute:search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-white transition-colors" />
+          <input v-model="keyword" placeholder="搜索歌曲..."
+            class="w-full h-10 bg-[#ffffff1a] hover:bg-[#ffffff2a] focus:bg-[#333] rounded-lg pl-10 pr-4 text-sm text-white outline-none  border border-transparent focus:border-[#1db954]"
             @keyup.enter="getSongs({ mid: currentMid, keyword })" />
         </div>
       </div>
     </div>
-
-    <!-- 歌曲列表标题 -->
-    <div
-      class=" px-8 py-3 text-body-small text-gray-500 border-b border-[#ffffff1a] z-10 sticky top-0 bg-[#121212]/80 backdrop-blur-sm">
-      <div class="grid grid-cols-[3rem_3.5rem_1fr_4rem_3rem] gap-4">
-        <div class="text-center">#</div>
-        <div />
-        <div>标题</div>
-        <div class="flex-center mr-4">
-          <div class="i-mingcute:time-line text-lg" />
+    <div class="w-full h-full flex flex-col relative ease-in-out" :class="isScrolled ? 'pt-[72px]' : 'pt-[320px]'">
+      <!-- 歌曲列表标题 -->
+      <div class="px-8 py-3 text-body-small text-gray-500 border-b border-[#ffffff1a] z-10 sticky top-0 bg-[#121212]">
+        <div class="grid grid-cols-[3rem_3.5rem_1fr_4rem_3rem] gap-4">
+          <div class="text-center">#</div>
+          <div />
+          <div>标题</div>
+          <div class="flex-center mr-4">
+            <div class="i-mingcute:time-line text-lg" />
+          </div>
+          <div />
         </div>
-        <div />
       </div>
+      <div :class="isScrolled ? 'h-[72px]' : 'h-[320px]'"></div>
+
+      <!-- 歌曲列表 -->
+      <div class="flex-1 px-8 pb-10" ref="listRef">
+        <div class="flex flex-col space-y-1 pt-2">
+          <SongItem v-for="(song, index) in renderList" :key="song.id" :song="song" :index="index + 1"
+            class="hover:bg-[#1a1a1a] rounded-lg px-2 transition-colors" />
+        </div>
+
+        <Loading v-if="loading && !renderList.length" class="mt-10" />
+
+        <!-- 空状态 -->
+        <div v-if="!loading && !renderList.length" class="flex flex-col items-center justify-center py-16">
+          <div class="i-mingcute:music-2-fill text-5xl mb-4 opacity-20" />
+          <p class="text-body-small">暂无音乐作品</p>
+        </div>
+
+        <!-- 底部占位 -->
+        <div class="h-10" />
+      </div>
+
+      <!-- 批量下载对话框组件 -->
+      <BulkDownloadDialog :show="showBulkDialog" :song-list="bulkSongList" :is-loading="isPreparingBulk"
+        :is-downloading="bulkDownloading" :download-index="bulkDownloadIndex" :select-all="bulkSelectAll"
+        @close="closeBulkDialog" @toggle-select-all="toggleSelectAll" @toggle-select="toggleSelect"
+        @item-change="onBulkItemChange" @start-download="confirmBulkDownload" @stop-download="stopBulkDownload" />
     </div>
-
-    <!-- 歌曲列表 -->
-    <div class="flex-1 overflow-y-auto scrollbar-styled px-8 py-4 pb-10 z-10 min-h-0 max-h-[calc(100vh-500px)]"
-      ref="listRef">
-      <div class="flex flex-col space-y-1">
-        <SongItem v-for="(song, index) in renderList" :key="song.id" :song="song" :index="index + 1"
-          class="hover:bg-[#1a1a1a] rounded-lg px-2 transition-colors" />
-      </div>
-
-      <Loading v-if="loading && !renderList.length" class="mt-10" />
-
-      <!-- 空状态 -->
-      <div v-if="!loading && !renderList.length" class="flex flex-col items-center justify-center py-16">
-        <div class="i-mingcute:music-2-fill text-5xl mb-4 opacity-20" />
-        <p class="text-body-small">暂无音乐作品</p>
-      </div>
-
-      <!-- 底部占位 -->
-      <div class="h-10" />
-    </div>
-
-    <!-- 批量下载对话框组件 -->
-    <BulkDownloadDialog :show="showBulkDialog" :song-list="bulkSongList" :is-loading="isPreparingBulk"
-      :is-downloading="bulkDownloading" :download-index="bulkDownloadIndex" :select-all="bulkSelectAll"
-      @close="closeBulkDialog" @toggle-select-all="toggleSelectAll" @toggle-select="toggleSelect"
-      @item-change="onBulkItemChange" @start-download="confirmBulkDownload" @stop-download="stopBulkDownload" />
-  </div>
+  </section>
 </template>
 
 <style scoped>
@@ -555,5 +552,10 @@ function stopBulkDownload() {
   /* 强制对齐 header */
   grid-template-columns: 3rem 3.5rem 1fr 4rem 3rem !important;
   padding: 0.5rem 1rem;
+}
+
+.need-ease {
+  transition: all 0.5s;
+  transition-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 </style>
