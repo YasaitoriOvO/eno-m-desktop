@@ -37,7 +37,7 @@ jobs:
           gh release create "${TAG_NAME}" \
             --title "${RELEASE_NAME}" \
             --notes "${CHANGELOG}" \
-            --draft=false
+            --draft=false || echo "Release ${TAG_NAME} already exists"
 
   upload-assets:
     needs: create-release
