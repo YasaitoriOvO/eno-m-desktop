@@ -122,7 +122,7 @@ watch(() => props.modelValue, (val) => {
 
 <template>
   <Dialog :open="modelValue" :title="userInfo?.isLogin ? '账号信息' : '扫码登录'" class="w-[360px]"
-    @visibleChange="(val) => !val && close()">
+    @visibleChange="(val: any) => !val && close()">
     <!-- 内容区 -->
     <div class="py-2">
       <!-- 已登录状态 -->
