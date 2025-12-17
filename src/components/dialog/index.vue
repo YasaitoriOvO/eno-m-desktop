@@ -1,6 +1,6 @@
 <script setup>
 import cn from 'classnames'
-import { ref, watch, onMounted, computed, useSlots } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 
 const props = defineProps({
   open: Boolean,
@@ -8,7 +8,6 @@ const props = defineProps({
   class: String,
 })
 const emit = defineEmits(['visibleChange'])
-const slots = useSlots()
 const dialogRef = ref(null)
 
 watch(() => props.open, (open) => {
@@ -34,51 +33,41 @@ function close() {
 
 function clickDialog(e) {
   const rect = dialogRef.value.getBoundingClientRect()
-  const isInDialog = 
-    rect.top <= e.clientY && 
+  const isInDialog =
+    rect.top <= e.clientY &&
     e.clientY <= rect.top + rect.height &&
-    rect.left <= e.clientX && 
+    rect.left <= e.clientX &&
     e.clientX <= rect.left + rect.width
-  
+
   if (!isInDialog) {
     close()
   }
 }
-
-// 判断是否有footer
-const hasFooter = computed(() => !!slots.footer)
 </script>
 
 <template>
   <Teleport to="body">
-    <dialog
-      ref="dialogRef" 
-      :class="cn(
-        'backdrop:bg-black/60 backdrop:backdrop-blur-sm bg-[#282828] text-white rounded-xl p-0 shadow-2xl w-[480px] max-w-[90vw] border border-white/10 focus:outline-none',
-        props.class
-      )"
-      @click="clickDialog"
-    >
+    <dialog ref="dialogRef" :class="cn(
+      'backdrop:bg-black/60 backdrop:backdrop-blur-sm bg-[#282828] text-white rounded-xl p-0 shadow-2xl w-[480px] max-w-[90vw] border border-white/10 focus:outline-none',
+      props.class
+    )" @click="clickDialog">
       <!-- 标题栏 -->
       <div class="flex items-center justify-between p-6 pb-4">
         <h3 class="text-xl font-bold leading-6 text-white">
           {{ props.title }}
         </h3>
-        <button 
-          class="rounded-full p-1 hover:bg-white/10 transition-colors cursor-pointer"
-          @click.stop="close"
-        >
+        <button class="rounded-full p-1 hover:bg-white/10 transition-colors cursor-pointer" @click.stop="close">
           <div class="i-mingcute:close-line w-6 h-6 text-gray-400 hover:text-white" />
         </button>
       </div>
 
       <!-- 内容区域 -->
-      <div :class="cn('px-6 overflow-y-auto custom-scrollbar', hasFooter ? 'pb-4' : 'pb-6')">
+      <div :class="cn('px-6 overflow-y-auto custom-scrollbar', $slots.footer ? 'pb-4' : 'pb-6')">
         <slot />
       </div>
 
       <!-- 底部区域 -->
-      <div v-if="hasFooter" class="px-6 pb-6 pt-2 flex justify-end gap-3">
+      <div v-if="$slots.footer" class="px-6 pb-6 pt-2 flex justify-end gap-3">
         <slot name="footer" />
       </div>
     </dialog>
@@ -110,6 +99,7 @@ dialog:not([open]) {
     opacity: 0;
     transform: translate(-50%, -48%) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
@@ -120,6 +110,7 @@ dialog:not([open]) {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -128,10 +119,12 @@ dialog:not([open]) {
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #555;
   border-radius: 3px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }

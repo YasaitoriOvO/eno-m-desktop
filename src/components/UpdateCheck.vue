@@ -76,7 +76,7 @@
         </div>
       </div>
 
-      <template>
+      <template #footer>
         <button @click="closeDialog"
           class="px-3 py-1.5 rounded text-xs font-medium text-gray-400 hover:bg-white/5 transition-colors">
           {{ updateAvailable && downloading ? '最小化' : '关闭' }}
