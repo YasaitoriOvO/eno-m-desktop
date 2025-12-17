@@ -1,50 +1,45 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
+
 const props = defineProps<{
   message: string
   type: 'success' | 'error' | 'warning' | 'info'
 }>()
-const { type, message } = props
+
+const iconMap = {
+  success: 'i-mingcute:check-circle-fill text-green-500',
+  error: 'i-mingcute:close-circle-fill text-red-500',
+  warning: 'i-mingcute:warning-fill text-amber-500',
+  info: 'i-mingcute:information-fill text-blue-500'
+}
+
+const iconClass = computed(() => iconMap[props.type])
 </script>
 
 <template>
-  <div class="message" :class="type">
-    {{ message }}
+  <div
+    class="fixed top-8 left-1/2 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-xl bg-[#282828]/95 backdrop-blur-md border border-white/10 shadow-2xl min-w-[300px] max-w-[80vw] animate-slide-in-down">
+    <div :class="[iconClass, 'text-xl flex-shrink-0']" />
+    <span class="text-sm font-medium text-gray-100 tracking-wide">{{ message }}</span>
   </div>
 </template>
 
 <style scoped>
-.message {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  /* transform: translateX(-50%); */
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-size: 16px;
-  z-index: 9999;
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
 }
 
-.info {
-  background-color: #e6f7ff;
-  border: 1px solid #91d5ff;
-  color: #1890ff;
-}
-
-.success {
-  background-color: #f6ffed;
-  border: 1px solid #b7eb8f;
-  color: #52c41a;
-}
-
-.warning {
-  background-color: #fffbe6;
-  border: 1px solid #ffe58f;
-  color: #faad14;
-}
-
-.error {
-  background-color: #fff2f0;
-  border: 1px solid #ffccc7;
-  color: #ff4d4f;
+.animate-slide-in-down {
+  animation: slideInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  /* 确保动画结束后保持居中 */
+  transform: translate(-50%, 0);
 }
 </style>
