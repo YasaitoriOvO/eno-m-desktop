@@ -1,96 +1,111 @@
 <template>
   <div class="update-check">
     <!-- 更新通知按钮 -->
-    <div v-if="updateAvailable && !customTrigger" class="update-notification">
-      <button @click="showUpdateDialog" class="update-btn">
-        🔄 有新版本可用 ({{ latestVersion }})
+    <div v-if="updateAvailable && !customTrigger" class="fixed bottom-5 right-5 animate-slide-in z-50">
+      <button @click="showUpdateDialog"
+        class="flex items-center gap-2 px-4 py-2.5 bg-[#667eea] hover:bg-[#5a6fd6] text-white rounded-lg shadow-lg transition-all hover:-translate-y-0.5 font-medium text-sm">
+        <div class="i-mingcute:refresh-2-fill text-lg" />
+        <span>有新版本可用 ({{ latestVersion }})</span>
       </button>
     </div>
 
     <!-- 更新对话框 -->
-    <div v-if="showDialog" class="update-modal-overlay" @click.self="closeDialog">
-      <div class="update-modal">
-        <div class="modal-header">
-          <h2>检查更新</h2>
-          <button @click="closeDialog" class="close-btn">✕</button>
+    <Dialog :open="showDialog" title="检查更新" @visibleChange="closeDialog" class="w-[400px]">
+      <div class="flex flex-col justify-center min-h-[120px] px-1 py-2">
+        <!-- 检查中 -->
+        <div v-if="checking" class="flex flex-col items-center gap-3 py-4">
+          <div class="i-svg-spinners:90-ring-with-bg text-2xl text-[#667eea]" />
+          <p class="text-sm text-gray-400">正在检查更新...</p>
         </div>
 
-        <div class="modal-body">
-          <div v-if="checking" class="checking-state">
-            <div class="spinner"></div>
-            <p>正在检查更新...</p>
-          </div>
-
-          <div v-else-if="checkError" class="error-state">
-            <p class="error-text">{{ checkError }}</p>
-          </div>
-
-          <div v-else-if="!hasChecked" class="initial-state">
-            <p>点击下方按钮检查最新版本</p>
-          </div>
-
-          <div v-else-if="!updateAvailable" class="no-update-state">
-            <p class="success-text">✓ 您已是最新版本</p>
-            <p class="version-text">当前版本: {{ currentVersion }}</p>
-          </div>
-
-          <div v-else class="update-available-state">
-            <div class="version-info">
-              <p>
-                <strong>当前版本:</strong>
-                <span>{{ currentVersion }}</span>
-              </p>
-              <p>
-                <strong>最新版本:</strong>
-                <span class="new-version">{{ latestVersion }}</span>
-              </p>
-            </div>
-
-            <div v-if="releaseNotes" class="release-notes">
-              <h4>更新说明:</h4>
-              <div class="notes-content">
-                {{ releaseNotes.slice(0, 200) }}
-                <span v-if="releaseNotes.length > 200">...</span>
-              </div>
-            </div>
-
-            <div v-if="downloading" class="download-progress">
-              <p>正在下载更新...</p>
-              <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: downloadProgress + '%' }"></div>
-              </div>
-              <p class="progress-text">{{ downloadProgress }}%</p>
-            </div>
-
-            <div v-if="downloaded" class="download-complete">
-              <p class="success-text">✓ 更新已下载完毕，请重启应用以安装</p>
-            </div>
-          </div>
+        <!-- 错误 -->
+        <div v-else-if="checkError" class="text-center py-4">
+          <div class="i-mingcute:close-circle-fill text-3xl text-red-500 mb-2 mx-auto" />
+          <p class="text-sm text-red-400">{{ checkError }}</p>
         </div>
 
-        <div class="modal-footer">
-          <button @click="closeDialog" class="btn btn-secondary">
-            {{ updateAvailable && downloading ? '最小化' : '关闭' }}
-          </button>
-          <button v-if="!checking && !hasChecked" @click="checkUpdates" class="btn btn-primary"
-            :disabled="checking || downloading">
-            检查更新
-          </button>
-          <button v-else-if="updateAvailable && !downloading && !downloaded" @click="downloadUpdate"
-            class="btn btn-primary" :disabled="downloading">
-            立即更新
-          </button>
-          <button v-else-if="downloaded" @click="quitAndInstall" class="btn btn-primary">
-            重启并安装
-          </button>
+        <!-- 初始状态 -->
+        <div v-else-if="!hasChecked" class="text-center py-4">
+          <p class="text-sm text-gray-400">点击下方按钮检查最新版本</p>
+        </div>
+
+        <!-- 无更新 -->
+        <div v-else-if="!updateAvailable" class="flex flex-col items-center gap-2 py-4">
+          <div class="i-mingcute:check-circle-fill text-3xl text-green-500" />
+          <p class="text-sm font-medium text-white">您已是最新版本</p>
+          <p class="text-xs text-gray-500">当前版本: {{ currentVersion }}</p>
+        </div>
+
+        <!-- 有更新 -->
+        <div v-else class="flex flex-col gap-4">
+          <div class="bg-white/5 rounded-lg p-3 flex flex-col gap-1.5">
+            <div class="flex justify-between items-center text-sm">
+              <span class="text-gray-400">当前版本</span>
+              <span class="font-mono text-gray-200">{{ currentVersion }}</span>
+            </div>
+            <div class="flex justify-between items-center text-sm">
+              <span class="text-gray-400">最新版本</span>
+              <span class="font-mono text-[#667eea] font-bold">{{ latestVersion }}</span>
+            </div>
+          </div>
+
+          <div v-if="releaseNotes" class="flex flex-col gap-2">
+            <h4 class="text-xs font-bold text-gray-300">更新说明</h4>
+            <div
+              class="bg-black/20 rounded p-2 text-xs text-gray-400 leading-relaxed max-h-[100px] overflow-y-auto custom-scrollbar">
+              {{ releaseNotes.slice(0, 200) }}
+              <span v-if="releaseNotes.length > 200">...</span>
+            </div>
+          </div>
+
+          <div v-if="downloading" class="flex flex-col gap-2">
+            <div class="flex justify-between text-xs text-gray-400">
+              <span>正在下载更新...</span>
+              <span>{{ downloadProgress }}%</span>
+            </div>
+            <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div class="h-full bg-[#667eea] transition-all duration-300" :style="{ width: downloadProgress + '%' }">
+              </div>
+            </div>
+          </div>
+
+          <div v-if="downloaded" class="flex items-center gap-2 text-green-500 bg-green-500/10 p-2 rounded text-xs">
+            <div class="i-mingcute:check-circle-fill" />
+            <span>更新已下载完毕，请重启应用以安装</span>
+          </div>
         </div>
       </div>
-    </div>
+
+      <template>
+        <button @click="closeDialog"
+          class="px-3 py-1.5 rounded text-xs font-medium text-gray-400 hover:bg-white/5 transition-colors">
+          {{ updateAvailable && downloading ? '最小化' : '关闭' }}
+        </button>
+
+        <button v-if="!checking && !hasChecked" @click="checkUpdates"
+          class="px-4 py-1.5 rounded bg-[#667eea] hover:bg-[#5a6fd6] text-white text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="checking || downloading">
+          检查更新
+        </button>
+
+        <button v-else-if="updateAvailable && !downloading && !downloaded" @click="downloadUpdate"
+          class="px-4 py-1.5 rounded bg-[#667eea] hover:bg-[#5a6fd6] text-white text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="downloading">
+          立即更新
+        </button>
+
+        <button v-else-if="downloaded" @click="quitAndInstall"
+          class="px-4 py-1.5 rounded bg-[#667eea] hover:bg-[#5a6fd6] text-white text-xs font-medium transition-colors">
+          重启并安装
+        </button>
+      </template>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import Dialog from './dialog/index.vue'
 
 const props = defineProps({
   customTrigger: {
@@ -219,13 +234,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.update-notification {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  animation: slideIn 0.3s ease-out;
-}
-
 @keyframes slideIn {
   from {
     transform: translateX(400px);
@@ -238,250 +246,20 @@ onUnmounted(() => {
   }
 }
 
-.update-btn {
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-  transition: all 0.3s ease;
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
 }
 
-.update-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
 }
 
-.update-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.update-modal {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  width: 90%;
-  max-width: 500px;
-  display: flex;
-  flex-direction: column;
-  animation: modalIn 0.3s ease-out;
-}
-
-@keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.modal-header {
-  padding: 20px;
-  border-bottom: 1px solid #f0f0f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #999;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.close-btn:hover {
-  background: #f0f0f0;
-  color: #333;
-}
-
-.modal-body {
-  padding: 20px;
-  min-height: 150px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.checking-state,
-.error-state,
-.initial-state,
-.no-update-state {
-  text-align: center;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f0f0f0;
-  border-top-color: #667eea;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 15px;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.error-text {
-  color: #e74c3c;
-  margin: 0;
-}
-
-.success-text {
-  color: #27ae60;
-  margin: 0 0 10px 0;
-  font-weight: 500;
-}
-
-.version-text {
-  color: #999;
-  font-size: 14px;
-  margin: 0;
-}
-
-.version-info {
-  background: #f9f9f9;
-  padding: 12px;
-  border-radius: 6px;
-  margin-bottom: 15px;
-}
-
-.version-info p {
-  margin: 8px 0;
-  font-size: 14px;
-}
-
-.version-info strong {
-  color: #333;
-  min-width: 70px;
-  display: inline-block;
-}
-
-.new-version {
-  color: #667eea;
-  font-weight: 600;
-}
-
-.release-notes {
-  margin-bottom: 15px;
-}
-
-.release-notes h4 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  color: #333;
-}
-
-.notes-content {
-  background: #f9f9f9;
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #666;
-  line-height: 1.5;
-  max-height: 100px;
-  overflow-y: auto;
-}
-
-.download-progress {
-  margin-top: 15px;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 4px;
-  background: #e0e0e0;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 2px;
-  overflow: hidden;
-  margin: 10px 0;
 }
 
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
-  transition: width 0.3s ease;
-}
-
-.progress-text {
-  font-size: 12px;
-  color: #999;
-  text-align: center;
-  margin: 5px 0 0 0;
-}
-
-.modal-footer {
-  padding: 15px 20px;
-  border-top: 1px solid #f0f0f0;
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-secondary {
-  background: #f0f0f0;
-  color: #333;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: #e0e0e0;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 </style>

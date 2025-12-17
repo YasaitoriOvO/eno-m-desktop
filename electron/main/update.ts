@@ -4,6 +4,9 @@ import electronUpdater from 'electron-updater'
 const { autoUpdater } = electronUpdater
 
 // 配置 autoUpdater
+if (!app.isPackaged) {
+  autoUpdater.forceDevUpdateConfig = true
+}
 autoUpdater.autoDownload = false
 autoUpdater.autoInstallOnAppQuit = true
 
