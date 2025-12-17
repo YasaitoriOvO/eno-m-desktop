@@ -16,7 +16,6 @@ const props = defineProps<{
 const router = useRouter()
 const store = useBlblStore()
 const PLStore = usePlaylistStore()
-const userInfo = inject('userInfo') as any
 
 interface fav {
   attr?: number
@@ -110,11 +109,6 @@ async function handlePlayClick(e: Event) {
     console.error('Failed to load fav list:', error)
   }
 }
-
-// 判断是否是当前用户的收藏夹
-const isOwner = computed(() => {
-  return userInfo.value && userInfo.value.mid && String(userInfo.value.mid) === String(props.fav.mid)
-})
 
 // 获取封面
 const cover = computed(() => {

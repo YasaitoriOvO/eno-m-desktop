@@ -126,6 +126,9 @@ export const usePlaylistStore = defineStore("playlist", {
                 const res = await invokeBiliApi(BLBL.GET_FAV_INFO, { media_id: id });
                 if (res.data?.info) {
                     this.favInfoCache[id] = res.data.info;
+                    if (!this.favInfoCache[id].cover) {
+                        this.favInfoCache[id].cover = this.favInfoCache[id].upper.face
+                    }
                 }
             } catch (error) {
                 console.warn(`Failed to fetch fav info for ${id}:`, error);
@@ -134,8 +137,9 @@ export const usePlaylistStore = defineStore("playlist", {
         // 批量获取封面 (低并发)
         async fetchFavCovers() {
             const allFavs = [...this.favList, ...this.collectedFavList];
+            console.log('Fetching fav covers for', this.collectedFavList, 'folders', this.favInfoCache);
             const pendingFavs = allFavs.filter(fav => !this.favInfoCache[String(fav.id)]?.cover);
-
+            console.log('Favs needing cover fetch:', pendingFavs);
             if (pendingFavs.length === 0) return;
 
             // 并发控制
@@ -144,6 +148,7 @@ export const usePlaylistStore = defineStore("playlist", {
 
             const worker = async () => {
                 while (queue.length > 0) {
+                    console.log('Remaining favs to fetch:', queue.length);
                     const fav = queue.shift();
                     if (!fav) break;
 

@@ -176,6 +176,7 @@ app.whenReady().then(() => {
       '*://*.hdslb.com/*',
       '*://*.bilivideo.com/*',
       '*://*.mcdn.bilivideo.cn/*',
+      '*://*.biliimg.com/*',
       '*://*.biliimg.com.cn/*',
       '*://*.biliimg.com.cn/*',
       '*://*.biliimg.cn/*',

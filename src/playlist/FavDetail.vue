@@ -73,7 +73,10 @@ async function getSongs(params: Record<string, any>) {
   if (loading.value) return
   loading.value = true
   try {
-    const res = await invokeBiliApi(BLBL.GET_FAV_INFO, params)
+    const res = await invokeBiliApi(BLBL.GET_FAV_INFO, {
+      ...params,
+      ps: 20
+    })
     const { info, medias } = res.data
 
     const videoList: song[] = (medias || []).map((item: any) => ({
@@ -148,7 +151,8 @@ function handleRemoveSong(song: song) {
       </template>
     </DynamicHeader>
 
-    <div class="w-full min-h-full flex flex-col relative ease-in-out" :class="isScrolled ? 'pt-[72px]' : 'pt-[320px]'">
+    <div class="w-full min-h-[calc(100%+200px)] flex flex-col relative ease-in-out"
+      :class="isScrolled ? 'pt-[72px]' : 'pt-[320px]'">
       <!-- 列表头 -->
       <div
         class="grid grid-cols-[3rem_3.5rem_1fr_4rem_3rem] gap-4 text-[#b3b3b3] text-sm border-b border-[#ffffff1a] pb-2 px-12 sticky top-0 bg-[#121212] z-10 pt-2">

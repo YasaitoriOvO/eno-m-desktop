@@ -1,9 +1,11 @@
 <script lang="ts" setup>
-import { useInfiniteScroll } from '@vueuse/core'
+import { useInfiniteScroll, useScroll } from '@vueuse/core'
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { average } from 'color.js'
 
 import SongItem from '~/components/SongItem.vue'
+import DynamicHeader from '~/components/DynamicHeader.vue'
 // @ts-ignore
 import { invokeBiliApi, BLBL } from '~/api/bili'
 
@@ -34,6 +36,23 @@ const collectionType = computed(() => {
 })
 
 const collectionInfo = ref<any>(null)
+const dominantColor = ref('#1db954') // 默认绿色
+
+// 提取封面主色调
+watch(collectionInfo, async (newInfo) => {
+  if (newInfo?.cover) {
+    try {
+      const color = await average(newInfo.cover, { amount: 1, format: 'hex' })
+      if (typeof color === 'string') {
+        dominantColor.value = color
+      }
+    } catch (e) {
+      console.warn('Failed to extract color:', e)
+      dominantColor.value = '#1db954'
+    }
+  }
+}, { immediate: true })
+
 const songListByPage = ref<Record<number, song[]>>({})
 const renderList = computed(() => {
   return Object.values(songListByPage.value).flat() as song[]
@@ -46,16 +65,18 @@ const page = ref({
   ps: 30,
   count: 0,
 })
-const listRef = ref(null)
+const contentRef = ref<HTMLElement | null>(null)
+const { y: scrollY } = useScroll(contentRef)
+const isScrolled = computed(() => scrollY.value > 100)
 
 // 滚动加载
 useInfiniteScroll(
-  listRef,
+  contentRef,
   async () => {
     // 如果数据都已加载或总数小于单页大小，无需加载更多
     if (loading.value || renderList.value.length >= page.value.count)
       return
-    
+
     if (Object.keys(songListByPage.value).length === 0) return
 
     await getVideos({ page_num: page.value.pn + 1 })
@@ -68,65 +89,92 @@ async function getVideos(params: Record<string, any>) {
   loading.value = true
   try {
     let res: any
-    
-    // 使用 GET_SEASONS_SERIES_LIST 来获取用户的所有合集和系列
-    // 然后找到匹配的那个，从中获取视频列表
-    res = await invokeBiliApi(BLBL.GET_SEASONS_SERIES_LIST, {
-      mid: currentMid.value,
-      page_num: params.page_num || 1,
-      page_size: 20,  // 增大页数以获取足够的合集/系列
-    })
+    let videoList: song[] = []
+    let totalCount = 0
+    let currentPage = params.page_num || 1
 
-    console.log('Fetched seasons/series list:', res)
-    
-    // 从返回的列表中找到匹配的合集或系列
-    let targetCollection = null
-    const itemsLists = res.data?.items_lists || {}
-    const allItems = [...(itemsLists.seasons_list || []), ...(itemsLists.series_list || [])]
-    
-    for (const item of allItems) {
-      if (String(item.meta?.season_id || item.meta?.series_id) === String(currentCollectionId.value)) {
-        targetCollection = item
-        break
+    if (collectionType.value === 'series') {
+      // 获取系列详情
+      res = await invokeBiliApi(BLBL.GET_SERIES_INFO, {
+        mid: currentMid.value,
+        series_id: currentCollectionId.value,
+        pn: currentPage,
+        ps: 30,
+        sort: 'desc'
+      })
+
+      const archives = res.data?.archives || []
+      videoList = archives.map((item: any) => ({
+        id: item.bvid || item.bv_id,
+        eno_song_type: 'bvid',
+        cover: item.pic,
+        title: item.title,
+        description: item.intro || '',
+        author: item.upper?.name || '未知创作者',
+        duration: item.duration || 0,
+        bvid: item.bvid || item.bv_id,
+        aid: item.aid,
+      }))
+
+      totalCount = res.data?.page?.total || 0
+
+      // 系列接口可能不返回 meta 信息，如果 collectionInfo 为空，尝试从 GET_SEASONS_SERIES_LIST 获取
+      if (!collectionInfo.value?.name) {
+        // 尝试获取元数据 (仅第一页尝试)
+        try {
+          const listRes = await invokeBiliApi(BLBL.GET_SEASONS_SERIES_LIST, {
+            mid: currentMid.value,
+            page_num: 1,
+            page_size: 20,
+          })
+          const seriesList = listRes.data?.items_lists?.series_list || []
+          const target = seriesList.find((s: any) => String(s.meta?.series_id) === String(currentCollectionId.value))
+          if (target) {
+            collectionInfo.value = target.meta
+          }
+        } catch (e) {
+          console.warn('Failed to fetch series meta', e)
+        }
+      }
+
+    } else {
+      // 获取合集详情
+      res = await invokeBiliApi(BLBL.GET_COLLECTION_INFO, {
+        mid: currentMid.value,
+        season_id: currentCollectionId.value,
+        page_num: currentPage,
+        page_size: 30,
+      })
+
+      const archives = res.data?.archives || []
+      videoList = archives.map((item: any) => ({
+        id: item.bvid || item.bv_id,
+        eno_song_type: 'bvid',
+        cover: item.pic,
+        title: item.title,
+        description: item.intro || '',
+        author: item.upper?.name || '未知创作者',
+        duration: item.duration || 0,
+        bvid: item.bvid || item.bv_id,
+        aid: item.aid,
+      }))
+
+      totalCount = res.data?.page?.total || 0
+      // 合集接口通常返回 meta
+      if (res.data?.meta) {
+        collectionInfo.value = res.data.meta
       }
     }
-    
-    if (!targetCollection) {
-      console.error('Collection not found in list')
-      Message.show({
-        type: 'error',
-        message: '合集未找到'
-      })
-      loading.value = false
-      return
+
+    page.value = {
+      pn: currentPage,
+      ps: 30,
+      count: totalCount,
     }
 
-    console.log('Found target collection:', targetCollection)
-    
-    // 从 targetCollection 中提取视频列表
-    const archives = targetCollection.archives || []
-    const videoList: song[] = archives.map((item: any) => ({
-      id: item.bvid || item.bv_id,
-      eno_song_type: 'bvid',
-      cover: item.pic,
-      title: item.title,
-      description: item.intro || '',
-      author: item.upper?.name || '未知创作者',
-      duration: item.duration || 0,
-      bvid: item.bvid || item.bv_id,
-      aid: item.aid,
-    }))
-    
-    // 更新信息
-    collectionInfo.value = targetCollection.meta || {}
-    page.value = {
-      pn: 1,
-      ps: 30,
-      count: videoList.length,
-    }
-    
     songListByPage.value = {
-      [1]: videoList
+      ...songListByPage.value,
+      [currentPage]: videoList
     }
   } catch (e) {
     console.error('Failed to fetch collection videos:', e)
@@ -147,7 +195,7 @@ watch(() => [currentCollectionId.value, currentMid.value, collectionType.value],
   console.log('Watch triggered with:', { collectionId, mid, type })
   songListByPage.value = {}
   page.value.pn = 1
-  loading.value = false 
+  loading.value = false
   getVideos({ page_num: 1 })
 }, { immediate: true })
 
@@ -164,92 +212,44 @@ function handleRemoveSong(song: song) {
 
 <template>
   <!-- 页面主容器 -->
-  <div class="w-full h-[calc(80vh)] flex flex-col bg-[#121212] relative overflow-hidden">
-    
-    <!-- 顶部背景渐变 -->
-    <div 
-      class="absolute top-0 left-0 w-full h-[300px] z-0 pointer-events-none"
-      style="background: linear-gradient(to bottom, #2a2a2a, #121212)"
-    ></div>
+  <section ref="contentRef" class="h-[calc(100vh-170px)] overflow-auto bg-[#121212] relative">
+    <DynamicHeader :img-src="collectionInfo?.cover || ''" :title="collectionInfo?.name || ''" :color="dominantColor"
+      :is-scrolled="isScrolled" v-model:keyword="keyword" @play="handlePlayPlaylist"
+      @search="getVideos({ page_num: 1 })" @open-external="() => { }">
+      <template #actions>
+        <div class="flex items-center gap-4 text-sm font-medium text-gray-300">
+          <span>{{ page.count }} 个视频</span>
+          <span v-if="collectionInfo?.description" class="text-gray-400 truncate max-w-[300px]">
+            {{ collectionInfo.description }}
+          </span>
+        </div>
+      </template>
+    </DynamicHeader>
 
-    <!-- 固定头部区域 -->
-    <div class="shrink-0 relative z-10">
-      <!-- 信息头 -->
-      <div class="px-8 pt-6 flex items-end gap-6 pb-6">
-        <div class="h-52 w-52 rounded-lg bg-gradient-to-br from-[#1db954] to-[#1aa34a] flex items-center justify-center shadow-2xl">
-          <div class="i-mingcute:folder-fill text-white text-8xl opacity-50" />
-        </div>
-        <div class="flex flex-col gap-2 mb-2 text-white">
-          <div class="text-sm font-bold uppercase text-[#1db954]">
-            {{ collectionType === 'series' ? '系列' : '合集' }}
-          </div>
-          <h1 class="text-7xl font-black tracking-tighter">
-            {{ collectionInfo?.name }}
-          </h1>
-          <div class="flex items-center gap-4 text-sm font-medium mt-4">
-            <span>{{ page.count }} 个视频</span>
-            <span v-if="collectionInfo?.description" class="text-gray-400">
-              {{ collectionInfo.description }}
-            </span>
-          </div>
-        </div>
+    <div class="w-full min-h-[calc(100%+200px)] flex flex-col relative ease-in-out"
+      :class="isScrolled ? 'pt-[72px]' : 'pt-[320px]'">
+      <!-- 表头 -->
+      <div
+        class="grid grid-cols-[3rem_3.5rem_1fr_4rem_3rem] gap-4 text-[#b3b3b3] text-sm border-b border-[#ffffff1a] pb-2 px-12 sticky top-0 bg-[#121212] z-10 pt-2">
+        <div class="text-center">#</div>
+        <div></div>
+        <div>标题</div>
+        <div class="i-mingcute:time-line text-lg justify-self-end mr-4"></div>
+        <div></div>
       </div>
 
-      <!-- 操作栏 -->
-      <div class="bg-[#121212] px-8 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-6">
-          <div 
-            class="w-14 h-14 rounded-full bg-[#1db954] flex items-center justify-center shadow-lg cursor-pointer hover:scale-105 hover:bg-[#1ed760] transition-all"
-            @click="handlePlayPlaylist"
-          >
-            <div class="i-mingcute:play-fill text-black text-3xl pl-1"></div>
-          </div>
+      <!-- 视频列表 -->
+      <div class="flex-1 px-8 pb-10">
+        <div class="flex flex-col space-y-1 pt-2">
+          <SongItem v-for="(song, index) in renderList" :key="song.id" :song="song" :index="index + 1" :del="false"
+            class="hover:bg-[#ffffff1a] rounded-md px-2" @delete-song="handleRemoveSong">
+          </SongItem>
         </div>
-
-        <!-- 搜索框 -->
-        <div class="relative group">
-          <div class="i-mingcute:search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-white z-10" />
-          <input
-            v-model="keyword"
-            placeholder="搜索视频"
-            type="text"
-            class="w-48 h-9 pl-9 pr-4 rounded-full bg-[#282828] hover:bg-[#2a2a2a] focus:bg-[#333] text-sm text-white outline-none transition-all placeholder:text-gray-500"
-            @keyup.enter="getVideos({ page_num: 1 })"
-          >
-        </div>
+        <Loading v-if="loading && !renderList.length" class="mt-10" />
+        <div class="h-10"></div>
       </div>
     </div>
-
-    <!-- 表头 -->
-    <div class="grid grid-cols-[3rem_3.5rem_1fr_4rem_3rem] gap-4 text-[#b3b3b3] text-sm border-b border-[#ffffff1a] pb-2 px-12">
-      <div class="text-center">#</div>
-      <div></div>
-      <div>标题</div>
-      <div class="i-mingcute:time-line text-lg justify-self-end mr-4"></div>
-      <div></div>
-    </div>
-
-    <!-- 视频列表 (滚动区域) -->
-    <div 
-      class="flex-1 overflow-y-auto scrollbar-styled px-8 py-4 pb-10 z-10 min-h-0" 
-      ref="listRef"
-    >
-      <div class="flex flex-col">
-        <SongItem 
-          v-for="(song, index) in renderList" 
-          :key="song.id" 
-          :song="song" 
-          :index="index + 1"
-          :del="false"
-          class="hover:bg-[#ffffff1a] rounded-md px-2"
-          @delete-song="handleRemoveSong"
-        >
-        </SongItem>
-      </div>
-      <Loading v-if="loading && !renderList.length" class="mt-10" />
-      <div class="h-10"></div>
-    </div>
-  </div>
+  </section>
 </template>
 
 <style scoped>
